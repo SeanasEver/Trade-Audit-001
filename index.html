@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>中海炼化数智化审计工具库</title>
+  
+  <!-- 引入外部资源 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  
+  <!-- 配置浅色调科技感颜色方案 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            techLight: '#F8FAFC',      // 浅色背景（接近白色）
+            techBlue: '#4A90E2',       // 浅科技蓝（主色）
+            techCyan: '#57D9C1',       // 浅科技青
+            techPurple: '#B39DDB',     // 浅科技紫
+            techDarkBlue: '#2C6ECB',   // 加深的标题主色
+          }
+        }
+      }
+    }
+  </script>
+  
+  <!-- 自定义工具类 -->
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .content-auto {
+        content-visibility: auto;
+      }
+      .glass-effect {
+        @apply bg-white/50 backdrop-blur-sm border border-techBlue/10;
+      }
+      .glow-hover {
+        @apply transition-all duration-500 hover:shadow-[0_0_15px_rgba(74,144,226,0.3)] hover:-translate-y-1;
+      }
+      .grid-bg {
+        background-image: 
+          linear-gradient(rgba(203, 213, 225, 0.8) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(203, 213, 225, 0.8) 1px, transparent 1px);
+        background-size: 30px 30px;
+      }
+      .folder-icon {
+        @apply w-16 h-16 md:w-20 md:h-20 flex items-center justify-center rounded-lg text-3xl md:text-4xl mb-3;
+      }
+      .app-icon {
+        @apply flex flex-col items-center p-3 rounded-xl transition-all duration-300 hover:bg-techBlue/10 cursor-pointer;
+      }
+      .app-icon-img {
+        @apply w-14 h-14 flex items-center justify-center rounded-lg text-2xl mb-2;
+      }
+      .app-icon-name {
+        @apply text-sm md:text-base text-center max-w-[100px] whitespace-normal;
+      }
+    }
+  </style>
+  
+  <style>
+    /* 浅色调科技背景与动画 */
+    body {
+      background-color: #F8FAFC;
+      background-image: 
+        radial-gradient(circle at 20% 50%, rgba(74, 144, 226, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 80% 30%, rgba(179, 157, 219, 0.1) 0%, transparent 40%);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    
+    /* 隐藏电脑端滚动条 */
+    @media (min-width: 768px) {
+      body {
+        overflow: hidden;
+      }
+    }
+    
+    /* 动态网格背景 */
+    .animated-grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.4;
+      animation: gridMove 15s linear infinite;
+      pointer-events: none; /* 防止背景干扰鼠标事件 */
+    }
+    
+    @keyframes gridMove {
+      0% { background-position: 0 0; }
+      100% { background-position: 30px 30px; }
+    }
+    
+    /* 标题渐变 */
+    .tech-title {
+      background: linear-gradient(90deg, #2C6ECB, #42B8A3, #9B7CD6);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      position: relative;
+    }
+    
+    .tech-title::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 2px;
+      bottom: -4px;
+      left: 0;
+      background: linear-gradient(90deg, #2C6ECB, #42B8A3, #9B7CD6);
+      filter: blur(2px);
+    }
+    
+    /* 移动端标题强制换行设置 */
+    .title-wrapper {
+      display: inline-block;
+    }
+    .mobile-line-break {
+      display: none;
+    }
+    
+    @media (max-width: 767px) {
+      .mobile-line-break {
+        display: block;
+      }
+      .tech-title {
+        font-size: clamp(1.8rem, 8vw, 2.5rem);
+      }
+      .mm-logo {
+        width: 40px !important;
+        height: 40px !important;
+        top: 10px !important;
+        left: 10px !important;
+      }
+      .joke-bubble {
+        width: 180px !important;
+        left: 65px !important;
+        top: 5px !important;
+        padding: 10px 13px 10px 15px !important;
+      }
+      .friend-link-btn {
+  width: auto !important;
+    height: 35px !important;
+    padding: 0 15px !important;     /* 移动端稍小的内边距 */
+    font-size: 0.8rem !important;   /* 移动端稍小的字体 */
+    bottom: 20px !important;
+    left: 50% !important;           /* 移动端水平居中 */
+    transform: translateX(-50%) !important;  /* 精确居中 */
+}
+      .friend-links-modal .modal-content {
+        max-height: 60vh !important;
+      }
+      .friend-links-list {
+        grid-template-columns: repeat(3, 1fr) !important;
+      }
+      .friend-links-title {
+        font-size: 1rem !important; /* 移动端字体稍小但保持加粗 */
+        font-weight: 600 !important;
+        margin-bottom: 0.3rem !important; /* 减少底部间距 */
+        text-align: center !important;
+        line-height: 0.8 !important; /* 降低行高 */
+      }
+    }
+    
+    /* 粒子装饰 */
+    .particle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(74, 144, 226, 0.2);
+      animation: float 8s infinite ease-in-out;
+      pointer-events: none;
+    }
+    
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      50% { transform: translateY(-20px) rotate(10deg); }
+    }
+
+    /* 猫爪轨迹样式 */
+    .paw-trail {
+      position: absolute;
+      font-size: 0.9rem;
+      color: #6B7280;
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0.7;
+    }
+
+    /* 某某集团logo样式 */
+    .mm-logo {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2);
+      object-fit: cover;
+      background-color: white;
+      z-index: 100;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .mm-logo:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 16px rgba(74, 144, 226, 0.3);
+    }
+
+    /* 笑话对话框样式 */
+    .joke-bubble {
+      position: fixed;
+      width: 200px;
+      max-width: 80vw;
+      padding: 10px 16px 10px 20px;
+      background-color: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      font-size: 0.9rem;
+      color: #333;
+      z-index: 99;
+      left: 85px;
+      top: 10px;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      text-align: left;
+      word-wrap: break-word;
+      pointer-events: none; /* 防止干扰logo交互 */
+    }
+    
+    .joke-bubble::after {
+      content: '';
+      position: absolute;
+      left: -10px;
+      top: 20px;
+      border-width: 10px 10px 10px 0;
+      border-style: solid;
+      border-color: transparent white transparent transparent;
+    }
+    
+    .joke-bubble.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* 文件夹样式 */
+    .folder-container {
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem;
+      text-align: center;
+    }
+    
+    .folder-name {
+      font-size: 1.2rem;
+      font-weight: semibold;
+    }
+    
+    /* 弹窗样式 */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+    }
+    
+    .modal-backdrop.active {
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    .modal-content {
+      background-color: white;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 500px;
+      max-height: 80vh;
+      padding: 0.75rem 1.5rem;
+      transform: scale(0.9);
+      opacity: 0;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      position: relative;
+      overflow-y: auto;
+    }
+    
+    .modal-backdrop.active .modal-content {
+      transform: scale(1);
+      opacity: 1;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-bottom: 0.5rem;
+      padding-bottom: 0.3rem;
+      border-bottom: 1px solid #eee;
+      position: relative;
+    }
+    
+    .modal-title {
+      font-size: 1.2rem;
+      font-weight: semibold;
+      color: #333;
+    margin: 0;          /* 移除默认外边距 */
+  line-height: 1.3;   /* 减少行高 */
+	}
+    
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.2rem;
+      cursor: pointer;
+      color: #999;
+      transition: all 0.2s ease;
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      padding: 0.25rem;
+      border-radius: 50%;
+      width: 30px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-close:hover {
+      color: #f44336;
+      background-color: #f5f5f5;
+    }
+    
+    .modal-body {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: flex-start;
+      padding-bottom: 0.3rem;
+    }
+    
+    .coming-soon {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 120px;
+      width: 100%;
+      color: #999;
+      font-size: 1.5rem;
+      font-weight: 500;
+    }
+
+    /* 友情链接按钮样式 */
+    .friend-link-btn {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;            /* 水平居中 */
+  transform: translateX(-50%);  /* 精确居中 */
+  width: auto;          /* 自动宽度以适应内容 */
+  height: 40px;         /* 适当高度 */
+  padding: 0 20px;      /* 添加水平内边距 */
+  border-radius: 8px;   /* 圆角矩形 */
+  background-color: #4A90E2;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;    /* 适当字体大小 */
+  font-weight: 500;     /* 字体稍粗 */
+  box-shadow: 0 4px 15px rgba(74, 144, 226, 0.4);
+  cursor: pointer;
+  transition: all 0.3s ease;
+  z-index: 101;
+  border: none;
+  white-space: nowrap;  /* 防止文字换行 */
+}
+    
+    .friend-link-btn:hover {
+      background-color: #2C6ECB;
+      box-shadow: 0 6px 20px rgba(74, 144, 226, 0.5);
+    }
+
+    /* 友情链接列表样式 - 修改为横向长条 */
+    .friend-links-modal {
+      align-items: flex-end; /* 弹窗靠底部显示 */
+      justify-content: center;
+      padding: 0;
+      background-color: rgba(0, 0, 0, 0.5); /* 恢复背景遮罩以便点击关闭 */
+    }
+    
+    .friend-links-modal .modal-content {
+      max-width: 100vw; /* 宽度扩展到整个视口 */
+      width: 95%; /* 稍小于视口宽度，留一点边距 */
+      max-height: none; /* 取消最大高度限制 */
+      height: auto;
+      border-radius: 16px 16px 16px 16px; /* 四个角都为圆角 */
+      margin: 0 auto;
+      bottom: 20px; /* 弹窗距离页面底部的外部边距，数值越大，弹窗越靠上 */
+      position: absolute;
+      display: flex;
+      flex-direction: column;
+      justify-content: center; /* 垂直居中内容 */
+      transform: translateY(100%); /* 初始位置在屏幕下方 */
+      overflow: hidden; /* 隐藏滚动条 */
+      box-shadow: 0 -2px 15px rgba(0,0,0,0.1);
+      padding: 0.5rem 1rem;/* 上下压缩为0.5rem */
+    }
+    
+    .friend-links-modal.active .modal-content {
+      transform: translateY(0); /* 向上展开 */
+    }
+    
+    .friend-links-modal .modal-header {
+      display: none; /* 取消标题 */
+    }
+    
+    .friend-links-title {
+      text-align: center; /* 强制居中显示 */
+      color: #666;
+      margin-bottom: 0;  /* 移除底部边距 */
+  padding-top: 0.8rem;    /* 增加顶部内边距，让标题往下移 */
+  padding-bottom: 0.2rem; /* 保持底部内边距 */
+	  font-size: 1.1rem; /* 字体调大 */
+      font-weight: 600; /* 加粗 */
+      line-height: 1; /* 降低行高，减少垂直占用空间 */
+      width: 100%; /* 确保标题宽度为100%，便于居中 */
+    }
+    
+    .friend-links-list {
+      width: 100%;
+      display: grid;
+      grid-template-columns: repeat(8, 1fr); /* 一行放八个 */
+      gap: 0.8rem;
+      padding-top: 0.5rem; /* 保持顶部距离不变 */
+      padding-bottom: 0rem;
+      padding-left: 0;
+      padding-right: 0;
+      margin: 0 auto; /* 水平居中 */
+    }
+    
+    .friend-link-item {
+      padding: 0.8rem 0.5rem;
+      background-color: rgba(74, 144, 226, 0.05);
+      border-radius: 8px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+      font-size: 0.85rem;
+      text-align: center;
+      color: #333;
+      border: 1px solid transparent;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    
+    .friend-link-item:hover {
+      background-color: rgba(74, 144, 226, 0.1);
+      transform: translateY(-2px);
+      border-color: rgba(74, 144, 226, 0.2);
+      box-shadow: 0 2px 8px rgba(74, 144, 226, 0.1);
+    }
+    
+
+	
+    /* 页脚 */
+    footer {
+      position: relative;
+      z-index: 10;
+    }
+  </style>
+</head>
+
+<body class="font-sans text-gray-800 p-4 md:p-5 relative">
+  <!-- 左上角某某集团logo -->
+  <img src="https://img1.baidu.com/it/u=1560960230,3952333259&fm=253&fmt=auto&app=138&f=JPEG?w=500&h=500" alt="某某集团logo" class="mm-logo" id="logo">
+  
+  <!-- 笑话对话框 -->
+  <div class="joke-bubble" id="jokeBubble"></div>
+  
+  <!-- 动态网格背景 -->
+  <div class="animated-grid grid-bg"></div>
+  
+  <!-- 装饰粒子 -->
+  <div class="particle w-3 h-3" style="top: 15%; left: 10%; animation-delay: 0s;"></div>
+  <div class="particle w-2 h-2" style="top: 70%; left: 85%; animation-delay: 1s;"></div>
+  <div class="particle w-4 h-4" style="top: 40%; left: 90%; animation-delay: 2s;"></div>
+  <div class="particle w-2 h-2" style="top: 20%; left: 80%; animation-delay: 3s;"></div>
+  <div class="particle w-3 h-3" style="top: 80%; left: 15%; animation-delay: 4s;"></div>
+  
+  <!-- 页面容器 -->
+  <div class="max-w-4xl w-full mx-auto relative z-10">
+    <!-- 标题区域 -->
+    <div class="text-center mb-8 md:mb-10 pt-1">
+      <h1 class="tech-title text-[clamp(2rem,6vw,3.5rem)] font-bold tracking-tight title-wrapper">
+        中海炼化<span class="mobile-line-break"></span>数智化审计工具库
+      </h1>
+      <p class="mt-5 mb-1 text-techBlue/80 text-lg md:text-xl max-w-lg mx-auto"> 
+        更高效、更智能
+      </p>
+      <!-- 浅色科技感分隔线 -->
+      <div class="mt-3 w-32 h-px bg-gradient-to-r from-transparent via-techBlue to-transparent mx-auto"></div>
+    </div>
+    
+    <!-- 功能按钮区域 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+      <!-- 第一个文件夹：审计问答智能体 -->
+      <div class="glass-effect rounded-xl glow-hover" onclick="openModal('modal1')">
+        <div class="folder-container">
+          <div class="folder-icon bg-techBlue/10 text-techBlue">
+            <i class="fa fa-comments"></i>
+          </div>
+          <div class="folder-name">审计问答智能体</div>
+        </div>
+      </div>
+      
+      <!-- 第二个文件夹：审计分析模型 -->
+      <div class="glass-effect rounded-xl glow-hover" onclick="openModal('modal2')">
+        <div class="folder-container">
+          <div class="folder-icon bg-techPurple/10 text-techPurple">
+            <i class="fa fa-line-chart"></i>
+          </div>
+          <div class="folder-name">审计分析模型</div>
+        </div>
+      </div>
+      
+      <!-- 第三个文件夹：审计辅助工具库 -->
+      <div class="glass-effect rounded-xl glow-hover" onclick="openModal('modal3')">
+        <div class="folder-container">
+          <div class="folder-icon bg-techCyan/10 text-techCyan">
+            <i class="fa fa-wrench"></i>
+          </div>
+          <div class="folder-name">审计辅助工具库</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- 页脚 -->
+    <footer class="mt-16 text-center text-gray-600 text-sm pb-8">
+      <div class="flex items-center justify-center gap-2 mb-2">
+        <div class="w-1 h-1 rounded-full bg-techBlue animate-pulse"></div>
+        <p>© 2025 中海炼化数智化审计工具库</p>
+      </div>
+      <p class="text-gray-500 text-xs">Powered by wangxch57</p>
+    </footer>
+  </div>
+  
+  <!-- 弹窗1：审计问答智能体 -->
+  <div id="modal1" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">审计问答智能体</div>
+        <button class="modal-close" onclick="closeModal('modal1')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <a href="https://agents.ai.cnooc:30009/agent/agents-share-web/#/assistant/share/337de894a75a4b3689f65b561233d558/FKgy" target="_blank" class="app-icon" title="公司制度问答">
+          <div class="app-icon-img bg-techBlue/10 text-techBlue">
+            <i class="fa fa-file-text-o"></i>
+          </div>
+          <div class="app-icon-name">公司制度问答</div>
+        </a>
+        <a href="https://agents.ai.cnooc:30009/agent/agents-share-web/#/assistant/share/4ef84635b57b436d912f48d61fe712a3/H5b8" target="_blank" class="app-icon" title="审计发现问答">
+          <div class="app-icon-img bg-techBlue/10 text-techBlue">
+            <i class="fa fa-search"></i>
+          </div>
+          <div class="app-icon-name">审计发现问答</div>
+        </a>
+        <a href="https://agents.ai.cnooc:30009/agent/agents-share-web/#/assistant/share/985505afad544e8aa55cf0b424d45e2e/XRkJ" target="_blank" class="app-icon" title="审计报告问答">
+          <div class="app-icon-img bg-techBlue/10 text-techBlue">
+            <i class="fa fa-clipboard"></i>
+          </div>
+          <div class="app-icon-name">审计报告问答</div>
+        </a>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 弹窗2：审计分析模型 -->
+  <div id="modal2" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">审计分析模型</div>
+        <button class="modal-close" onclick="closeModal('modal2')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <a href="https://seanasever.github.io/Purchase-Audit-001/" target="_blank" class="app-icon" title="采办串通投标分析模型">
+          <div class="app-icon-img bg-techPurple/10 text-techPurple">
+            <i class="fa fa-bar-chart"></i>
+          </div>
+          <div class="app-icon-name">采办串通投标分析模型</div>
+        </a>
+      </div>
+    </div>
+  </div>
+  
+  <!-- 弹窗3：审计辅助工具库 -->
+  <div id="modal3" class="modal-backdrop">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">审计辅助工具库</div>
+        <button class="modal-close" onclick="closeModal('modal3')">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="coming-soon">敬请期待</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 友情链接按钮 -->
+<button class="friend-link-btn" id="friendLinkBtn" onclick="toggleFriendLinks()">
+  友情链接
+</button>
+  
+  <!-- 友情链接弹窗 -->
+  <div id="friendLinksModal" class="modal-backdrop friend-links-modal">
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="friend-links-title">---友情链接---</div>
+        <div class="friend-links-list">
+          <div class="friend-link-item" onclick="window.open('https://smartaudit.cnooc/#/login', '_blank')">数智化审计平台</div>
+          <div class="friend-link-item" onclick="window.open('https://he.ai.cnooc/', '_blank')">海能大模型平台</div>
+          <div class="friend-link-item" onclick="window.open('https://admin.cnoocmall.com/login', '_blank')">电商系统</div>
+          <div class="friend-link-item" onclick="window.open('https://wuliu.cnoocmall.com/scm/', '_blank')">物流系统</div>
+          <div class="friend-link-item" onclick="window.open('https://im.rms.cnooc/site/manage/#/login', '_blank')">零管系统</div>
+          <div class="friend-link-item" onclick="window.open('https://pay-web.rms.cnooc/login?redirect=%2Findex', '_blank')">零管支付平台</div>
+          <div class="friend-link-item" onclick="window.open('https://web.srms.cnooc.com.cn/ac/?callback=http%3A%2F%2Fweb.srms.cnooc.com.cn%2Fwelcome.do%3F&clientId=groupAppServer', '_blank')">销售资源管理系统</div>
+          <div class="friend-link-item" onclick="window.open('https://buy.cnooc.com.cn/cbjylogin/login', '_blank')">采办系统1.0</div>
+          <div class="friend-link-item" onclick="window.open('https://bid.cnooc.com.cn/home/#/navigation', '_blank')">采办系统2.0</div>
+          <div class="friend-link-item" onclick="window.open('https://cw.cnooc.com.cn/', '_blank')">久其报表系统</div>
+          <div class="friend-link-item" onclick="window.open('https://cwy.cnooc.com.cn/CAS/login?service=https%3A%2F%2Fcwy.cnooc.com.cn%2FOSPPortal%2FCSCPortal.jsp', '_blank')">财务云报账系统</div>
+          <div class="friend-link-item" onclick="window.open('https://www.tianyancha.com/', '_blank')">天眼查网站</div>
+          <div class="friend-link-item" onclick="window.open('https://www.gsxt.gov.cn/index.html', '_blank')">国家信用公示平台</div>
+          <div class="friend-link-item" onclick="window.open('https://wenshu.court.gov.cn/', '_blank')">中国裁判文书网</div>
+          <div class="friend-link-item" onclick="window.open('https://whjy.mem.gov.cn/#/licenseSearch', '_blank')">危化品监管平台</div>
+          <div class="friend-link-item" onclick="window.open('https://law.wkinfo.com.cn/', '_blank')">法规知识库</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 冷笑话数组
+    const jokes = [
+      "小蚯蚓问爸爸去哪儿了？妈妈说“你爸陪人钓鱼去了”。",
+	  "为什么海鸥飞到巴黎就不走？因为巴黎是家。",
+	  "小明今天放屁声特别大，你知道为什么吗？因为他今天穿了喇叭裤。",
+	  "孙悟空金箍棒丢了，就把土地公召唤出来，问土地公“土地公，你知道我金箍棒在哪儿吗？”土地公回答说“它棒就棒在特别配您的发型”。",
+	  "大王收到前线战报，前线战绩有胜有败，大王就召集群臣说“孤的胜，大家都有功劳，孤的败！”，然后大王就走了。",
+	  "什么水果适合在银行上班？桂圆。",
+	  "有一天唐僧在石头上画了一个笑脸，然后对孙悟空说“快看，你妈笑了！”。",
+	  "河南人对事物表达肯定的时候都说“中”，所以河南人的中评其实都是好评。",
+      "有个杀马特少年去世了，他的爸爸在葬礼上大喊：造孽啊，真是白发人送赤橙黄绿青蓝紫发人啊。",
+	  "为什么恐怖游戏里一般都会有钢琴和邮箱？因为钢琴住了几个妖，邮箱住了几个魔。",
+	  "别看了别看了，赶紧工作吧！",
+	  "为什么阿姨不敢流汗？因为阿姨怕留下姨汗。",
+	  "请用“要么”造个句，要么鬼怪快离开，要么鬼怪快离开。",
+      "吸血鬼为什么在重庆不敢吃东西，因为它喜欢blood。",
+      "为什么一个猎人开枪打一只狐狸，但是他自己死了，因为狐狸是反射狐。",
+      "为什么阿凡达洗脖子需要搓好几遍才干净？因为蓝脖积泥。",
+      "一块姜被切成四块，会变成什么？会变成姜姜姜姜~",
+      "曹操带着曹冲拜访刘备，走到门口的时候说“曹操携幼子前来拜访”，刘备说“你来就来呗，还带啥水果啊”。",
+      "擎天柱和威震天打架打输了，被打成了一堆碎片，大黄蜂抱着零件去找修车师傅，师傅问这是啥啊，大黄蜂说”你若安好，便是擎天。",
+      "有一天渔夫抓住了一只鱿鱼，鱿鱼  乞求说“求求你把我放了吧”，渔夫说“你答对我几个问题我就放了你”，鱿鱼说“那没问题，来，你考我吧”，然后渔夫就把鱿鱼烤了。"
+	];
+    
+    // 获取DOM元素
+    const logo = document.getElementById('logo');
+    const jokeBubble = document.getElementById('jokeBubble');
+    const modals = document.querySelectorAll('.modal-backdrop');
+    const friendLinkBtn = document.getElementById('friendLinkBtn');
+    const friendLinksModal = document.getElementById('friendLinksModal');
+    let isClosingModal = false; // 标记是否正在关闭弹窗
+    
+    // 随机获取一个笑话
+    function getRandomJoke() {
+      const randomIndex = Math.floor(Math.random() * jokes.length);
+      return jokes[randomIndex];
+    }
+    
+    // 显示笑话
+    logo.addEventListener('mouseenter', () => {
+      jokeBubble.textContent = getRandomJoke();
+      jokeBubble.classList.add('active');
+    });
+    
+    // 隐藏笑话
+    logo.addEventListener('mouseleave', () => {
+      jokeBubble.classList.remove('active');
+    });
+    
+    // 弹窗控制函数
+    function openModal(modalId) {
+      // 如果有弹窗正在关闭，则不执行打开操作
+      if (isClosingModal) return;
+      
+      // 先关闭所有已打开的弹窗
+      closeAllModals();
+      
+      const modal = document.getElementById(modalId);
+      if (modal) {
+        modal.classList.add('active');
+        document.body.style.overflow = 'hidden';
+      }
+    }
+    
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (modal && modal.classList.contains('active')) {
+        // 标记为正在关闭
+        isClosingModal = true;
+        
+        // 获取弹窗内容元素
+        const modalContent = modal.querySelector('.modal-content');
+        if (modalContent) {
+          // 禁用弹窗内容的鼠标事件，防止点击穿透
+          modalContent.style.pointerEvents = 'none';
+        }
+        
+        // 移除active类，触发关闭动画
+        modal.classList.remove('active');
+        
+        // 等待动画完成后再完全重置状态
+        setTimeout(() => {
+          // 只有当不是友情链接弹窗时才恢复overflow
+          if (modalId !== 'friendLinksModal') {
+            document.body.style.overflow = '';
+          }
+          if (modalContent) {
+            modalContent.style.pointerEvents = '';
+          }
+          // 重置关闭状态
+          isClosingModal = false;
+          
+          // 如果关闭的是友情链接弹窗，显示按钮并添加灵动动画
+          if (modalId === 'friendLinksModal') {
+            friendLinkBtn.style.display = 'flex';
+          }
+        }, 300); // 与CSS过渡时间匹配
+      }
+    }
+    
+    // 关闭所有弹窗
+    function closeAllModals() {
+      modals.forEach(modal => {
+        if (modal.classList.contains('active')) {
+          closeModal(modal.id);
+        }
+      });
+    }
+    
+    // 友情链接弹窗控制
+    function toggleFriendLinks() {
+      if (friendLinksModal.classList.contains('active')) {
+        closeModal('friendLinksModal');
+        friendLinkBtn.style.display = 'flex';
+      } else {
+        // 打开友情链接弹窗时隐藏按钮
+        friendLinksModal.classList.add('active');
+        friendLinkBtn.style.display = 'none';
+      }
+    }
+    
+    // 点击弹窗外部关闭弹窗（精确判断点击区域）
+    modals.forEach(modal => {
+      modal.addEventListener('click', function(e) {
+        // 只有点击的是背景层（.modal-backdrop）本身时才关闭
+        if (e.target === this && this.classList.contains('active')) {
+          closeModal(this.id);
+        }
+      });
+    });
+    
+    // 点击ESC键关闭弹窗
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        closeAllModals();
+        // 确保ESC关闭弹窗时显示友情链接按钮
+        friendLinkBtn.style.display = 'flex';
+      }
+    });
+    
+    // 点击卡片缩放效果
+    document.querySelectorAll('.app-icon, .friend-link-item').forEach(card => {
+      card.addEventListener('click', function() {
+        this.classList.add('scale-95');
+        setTimeout(() => this.classList.remove('scale-95'), 200);
+      });
+    });
+    
+    // 鼠标移动轨迹猫爪效果 - 优化性能
+    let lastPawTime = 0;
+    const pawInterval = 200;
+    const maxPaws = 10; // 限制同时存在的猫爪数量
+    
+    document.addEventListener('mousemove', (e) => {
+      const now = Date.now();
+      if (now - lastPawTime < pawInterval) return;
+      lastPawTime = now;
+      
+      // 限制猫爪数量，防止过多DOM元素影响性能
+      const existingPaws = document.querySelectorAll('.paw-trail');
+      if (existingPaws.length >= maxPaws) {
+        existingPaws[0].remove();
+      }
+      
+      const paw = document.createElement('div');
+      paw.className = 'paw-trail';
+      paw.innerHTML = '<i class="fa fa-paw"></i>';
+      paw.style.left = `${e.clientX - 6}px`;
+      paw.style.top = `${e.clientY - 3}px`;
+      const rotate = (Math.random() - 0.5) * 20;
+      paw.style.transform = `rotate(${rotate}deg)`;
+      document.body.appendChild(paw);
+      
+      // 使用requestAnimationFrame优化动画
+      setTimeout(() => {
+        paw.style.transition = 'opacity 0.7s, transform 0.7s';
+        paw.style.opacity = '0';
+        paw.style.transform = `rotate(${rotate}deg) scale(0.6)`;
+        setTimeout(() => {
+          if (paw.parentNode) {
+            paw.parentNode.removeChild(paw);
+          }
+        }, 700);
+      }, 200);
+    });
+    
+    // 确保页面加载完成后执行
+    document.addEventListener('DOMContentLoaded', function() {
+      // 初始化检查弹窗状态
+      modals.forEach(modal => {
+        if (modal.classList.contains('active')) {
+          document.body.style.overflow = 'hidden';
+        }
+      });
+    });
+  </script>
+</body>
+</html>
